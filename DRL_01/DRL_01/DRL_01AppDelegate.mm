@@ -28,7 +28,7 @@
 	[Isgl3dDirector sharedInstance].deviceOrientation = Isgl3dOrientationLandscapeLeft;
 
 	// Set the director to display the FPS
-	[Isgl3dDirector sharedInstance].displayFPS = NO;
+	[Isgl3dDirector sharedInstance].displayFPS = YES;
 
 	// Create the UIViewController
 	_viewController = [[Isgl3dViewController alloc] initWithNibName:nil bundle:nil];

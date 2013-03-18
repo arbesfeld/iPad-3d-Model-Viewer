@@ -12,8 +12,13 @@
 @interface PerspectiveView : Isgl3dBasic3DView {
     
 @private
+    //list of all cubes
+    NSMutableArray *_allCubes;
+    //cube that is being modified
     Isgl3dMultiMaterialCube *_cube;
+    Isgl3dLight *_greenLight, *_redLight, *_blueLight;
 }
+-(id) initWithCube:(Isgl3dMultiMaterialCube *)cube andTick:(BOOL)tick;
 
--(id) initWithCube:(Isgl3dMultiMaterialCube *)cube;
+- (void)tick:(float)dt;
 @end

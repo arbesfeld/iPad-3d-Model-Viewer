@@ -71,7 +71,7 @@ float const epsilon = 1e-8;
         _cube = [Isgl3dMultiMaterialCube cubeWithDimensionsAndMaterials:cubeMaterialArray uvMapArray:uvMapCubeArray width:3 height:3 depth:3 nSegmentWidth:2 nSegmentHeight:2 nSegmentDepth:2];
         
         // lower right
-        _perspectiveView = [[PerspectiveView alloc] initWithCube:_cube];
+        _perspectiveView = [[PerspectiveView alloc] initWithCube:_cube andTick:YES];
         
         //create perspective grid
         Isgl3dTextureMaterial * gridMaterial = [Isgl3dTextureMaterial materialWithTextureFile:@"grid.png" shininess:0 precision:Isgl3dTexturePrecisionHigh repeatX:YES repeatY:YES];
@@ -89,7 +89,7 @@ float const epsilon = 1e-8;
         _perspectiveController = [[PerspectiveController alloc] initWithView:_perspectiveView cx:30 cy:30 cz:30  name:@"Perspective" cube:_cube];
         
         // lower left
-        _frontView = [[PerspectiveView alloc] initWithCube:_cube];
+        _frontView = [[PerspectiveView alloc] initWithCube:_cube andTick:NO];
         _frontView.viewport = CGRectMake(0.0, height/2.0, width/2.0, height/2.0);
         _frontController = [[PerspectiveController alloc] initWithView:_frontView cx:0 cy:0 cz:30 name:@"Front" cube:_cube];
         
@@ -100,7 +100,7 @@ float const epsilon = 1e-8;
         [_frontView.scene addChild:frontGridNode];
         
         // upper right
-        _sideView = [[PerspectiveView alloc] initWithCube:_cube];
+        _sideView = [[PerspectiveView alloc] initWithCube:_cube andTick:NO];
         _sideView.viewport = CGRectMake(width/2.0, 0.0, width/2.0, height/2.0);
         _sideController = [[PerspectiveController alloc] initWithView:_sideView cx:30 cy:0 cz:0 name:@"Side" cube:_cube];
         
@@ -112,7 +112,7 @@ float const epsilon = 1e-8;
         [_sideView.scene addChild:sideGridNode];
         
         // upper left
-        _topView = [[PerspectiveView alloc] initWithCube:_cube];
+        _topView = [[PerspectiveView alloc] initWithCube:_cube andTick:NO];
         _topView.viewport = CGRectMake(width/2.0, height/2.0, width/2.0, height/2.0);
         _topController = [[PerspectiveController alloc] initWithView:_topView cx:0 cy:30 cz:epsilon name:@"Top" cube:_cube];
         
@@ -136,17 +136,9 @@ float const epsilon = 1e-8;
 	}
 	return self;
 }
-- (void) rotateButtonPressed:(Isgl3dEvent3D *)event {
-	NSLog(@"Rotate button pressed");
-	if(_canRotate) {
-        [_rotateButton setMaterial:[Isgl3dTextureMaterial materialWithTextureFile:@"rotateOff.png" shininess:0 precision:Isgl3dTexturePrecisionMedium repeatX:NO repeatY:NO]];
-        [_perspectiveController setRotation:NO];
-        [_topController setRotation:NO];
-        [_sideController setRotation:NO];
-        [_frontController setRotation:NO];
-        _canRotate = NO;
-    }
-    else {
+
+- (void) toggleRotate:(BOOL)on {
+    if(on) {
         [_rotateButton setMaterial:[Isgl3dTextureMaterial materialWithTextureFile:@"rotateOn.png" shininess:0 precision:Isgl3dTexturePrecisionMedium repeatX:NO repeatY:NO]];
         [_perspectiveController setRotation:YES];
         [_topController setRotation:YES];
@@ -154,19 +146,17 @@ float const epsilon = 1e-8;
         [_frontController setRotation:YES];
         _canRotate = YES;
     }
-}
-
-- (void) moveButtonPressed:(Isgl3dEvent3D *)event {
-	NSLog(@"Move button pressed");
-	if(_canMove) {
-        [_moveButton setMaterial:[Isgl3dTextureMaterial materialWithTextureFile:@"moveOff.png" shininess:0 precision:Isgl3dTexturePrecisionMedium repeatX:NO repeatY:NO]];
-        [_perspectiveController setMove:NO];
-        [_topController setMove:NO];
-        [_sideController setMove:NO];
-        [_frontController setMove:NO];
-        _canMove = NO;
-    }
     else {
+        [_rotateButton setMaterial:[Isgl3dTextureMaterial materialWithTextureFile:@"rotateOff.png" shininess:0 precision:Isgl3dTexturePrecisionMedium repeatX:NO repeatY:NO]];
+        [_perspectiveController setRotation:NO];
+        [_topController setRotation:NO];
+        [_sideController setRotation:NO];
+        [_frontController setRotation:NO];
+        _canRotate = NO;
+    }
+}
+- (void) toggleMove:(BOOL)on {
+    if(on) {
         [_moveButton setMaterial:[Isgl3dTextureMaterial materialWithTextureFile:@"moveOn.png" shininess:0 precision:Isgl3dTexturePrecisionMedium repeatX:NO repeatY:NO]];
         [_perspectiveController setMove:YES];
         [_topController setMove:YES];
@@ -174,11 +164,26 @@ float const epsilon = 1e-8;
         [_frontController setMove:YES];
         _canMove = YES;
     }
+    else {
+        [_moveButton setMaterial:[Isgl3dTextureMaterial materialWithTextureFile:@"moveOff.png" shininess:0 precision:Isgl3dTexturePrecisionMedium repeatX:NO repeatY:NO]];
+        [_perspectiveController setMove:NO];
+        [_topController setMove:NO];
+        [_sideController setMove:NO];
+        [_frontController setMove:NO];
+        _canMove = NO;
+    }
 }
 
-- (void) scaleButtonPressed:(Isgl3dEvent3D *)event {
-	NSLog(@"Scale button pressed");
-	if(_canScale) {
+- (void) toggleScale:(BOOL)on {
+    if(on) {
+        [_scaleButton setMaterial:[Isgl3dTextureMaterial materialWithTextureFile:@"resizeOn.png" shininess:0 precision:Isgl3dTexturePrecisionMedium repeatX:NO repeatY:NO]];
+        [_perspectiveController setMove:YES];
+        [_topController setScale:YES];
+        [_sideController setScale:YES];
+        [_frontController setScale:YES];
+        _canScale = YES;
+    }
+    else {
         [_scaleButton setMaterial:[Isgl3dTextureMaterial materialWithTextureFile:@"resizeOff.png" shininess:0 precision:Isgl3dTexturePrecisionMedium repeatX:NO repeatY:NO]];
         [_perspectiveController setScale:NO];
         [_topController setScale:NO];
@@ -186,13 +191,40 @@ float const epsilon = 1e-8;
         [_frontController setScale:NO];
         _canScale = NO;
     }
+}
+- (void) rotateButtonPressed:(Isgl3dEvent3D *)event {
+	NSLog(@"Rotate button pressed");
+	if(_canRotate) {
+        [self toggleRotate:NO];
+    }
     else {
-        [_scaleButton setMaterial:[Isgl3dTextureMaterial materialWithTextureFile:@"resizeOn.png" shininess:0 precision:Isgl3dTexturePrecisionMedium repeatX:NO repeatY:NO]];
-        [_perspectiveController setMove:YES];
-        [_topController setScale:YES];
-        [_sideController setScale:YES];
-        [_frontController setScale:YES];
-        _canScale = YES;
+        [self toggleRotate:YES];
+        [self toggleMove:NO];
+        [self toggleScale:NO];
+    }
+}
+
+- (void) moveButtonPressed:(Isgl3dEvent3D *)event {
+	NSLog(@"Move button pressed");
+	if(_canMove) {
+        [self toggleMove:NO];
+    }
+    else {
+        [self toggleMove: YES];
+        [self toggleRotate: NO];
+        [self toggleScale: NO];
+    }
+}
+
+- (void) scaleButtonPressed:(Isgl3dEvent3D *)event {
+	NSLog(@"Scale button pressed");
+	if(_canScale) {
+        [self toggleScale:NO];
+    }
+    else {
+        [self toggleScale:YES];
+        [self toggleRotate:NO];
+        [self toggleMove:NO]; 
     }
 }
 
