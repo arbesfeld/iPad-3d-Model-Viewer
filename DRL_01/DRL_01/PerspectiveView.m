@@ -82,6 +82,8 @@ const int MAXCUBES = 20;
     staticCube.scaleX = cube.scaleX;
     staticCube.scaleY = cube.scaleY;
     staticCube.scaleZ = cube.scaleZ;
+    staticCube.rotationX = cube.rotationX;
+    staticCube.rotationY = cube.rotationY;
     staticCube.rotationZ = cube.rotationZ;
     
     cubeCount++;
