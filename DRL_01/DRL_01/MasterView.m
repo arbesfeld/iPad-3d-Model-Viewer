@@ -19,6 +19,8 @@ float const epsilon = 1e-8;
         CGFloat width = [UIScreen mainScreen].bounds.size.width;
         CGFloat height = [UIScreen mainScreen].bounds.size.height;
         
+        [self createWorld];
+        
         // hud
         _canRotate = NO; _canMove = YES; _canScale = NO;
         
@@ -57,7 +59,7 @@ float const epsilon = 1e-8;
         
         // cube
         
-//        Isgl3dTextureMaterial * cubeMaterial = [[Isgl3dTextureMaterial alloc] initWithTextureFile:@"cubeMaterial.png" shininess:0 precision:Isgl3dTexturePrecisionMedium repeatX:YES repeatY:YES];
+//        Isgl3dTextureMaterial * cubeMaterial = [[Isgl3dTextureMaterial alloc] initWithTextureFile:@"cubeMaterial.png" shininess:0     precision:Isgl3dTexturePrecisionMedium repeatX:YES repeatY:YES];
         
         Isgl3dColorMaterial * cubeMaterial1 = [Isgl3dColorMaterial materialWithHexColors:@"6f1717" diffuse:@"6f1717" specular:@"6f1717" shininess:0];
         
@@ -68,10 +70,13 @@ float const epsilon = 1e-8;
         
         NSArray * cubeMaterialArray = [[NSArray alloc] initWithObjects:cubeMaterial1, cubeMaterial2, cubeMaterial3, cubeMaterial1, cubeMaterial2, cubeMaterial3, nil];
         NSArray * uvMapCubeArray = [[NSArray alloc] initWithObjects:uvMapCube, uvMapCube, uvMapCube, uvMapCube, uvMapCube, uvMapCube,  nil];
-        _cube = [Isgl3dMultiMaterialCube cubeWithDimensionsAndMaterials:cubeMaterialArray uvMapArray:uvMapCubeArray width:3 height:3 depth:3 nSegmentWidth:2 nSegmentHeight:2 nSegmentDepth:2];
+        _cube = [Isgl3dMultiMaterialCube cubeWithDimensionsAndMaterials:cubeMaterialArray uvMapArray:uvMapCubeArray width:1 height:1 depth:1 nSegmentWidth:2 nSegmentHeight:2 nSegmentDepth:2];
+        _cube.scaleX = 3;
+        _cube.scaleY = 3;
+        _cube.scaleZ = 3;
         
         // lower right
-        _perspectiveView = [[PerspectiveView alloc] initWithCube:_cube andTick:YES];
+        _perspectiveView = [[PerspectiveView alloc] initWithCube:_cube andWorld:_worldObjects andTick:YES];
         
         //create perspective grid
         Isgl3dTextureMaterial * gridMaterial = [Isgl3dTextureMaterial materialWithTextureFile:@"grid.png" shininess:0 precision:Isgl3dTexturePrecisionHigh repeatX:YES repeatY:YES];
@@ -86,12 +91,12 @@ float const epsilon = 1e-8;
         [_perspectiveView.scene addChild:gridNode];
         
         _perspectiveView.viewport = CGRectMake(0.0, 0.0, width/2.0, height/2.0);
-        _perspectiveController = [[PerspectiveController alloc] initWithView:_perspectiveView cx:30 cy:30 cz:30  name:@"Perspective" cube:_cube];
+        _perspectiveController = [[PerspectiveController alloc] initWithView:_perspectiveView cx:30 cy:30 cz:30  name:@"Perspective" cube:_cube world:_worldObjects];
         
         // lower left
-        _frontView = [[PerspectiveView alloc] initWithCube:_cube andTick:NO];
+        _frontView = [[PerspectiveView alloc] initWithCube:_cube andWorld:_worldObjects andTick:YES];
         _frontView.viewport = CGRectMake(0.0, height/2.0, width/2.0, height/2.0);
-        _frontController = [[PerspectiveController alloc] initWithView:_frontView cx:0 cy:0 cz:30 name:@"Front" cube:_cube];
+        _frontController = [[PerspectiveController alloc] initWithView:_frontView cx:0 cy:0 cz:30 name:@"Front" cube:_cube world:_worldObjects];
         
         Isgl3dMeshNode * frontGridNode = [[[Isgl3dMeshNode alloc] init] createNodeWithMesh:grid andMaterial:gridMaterial];
         
@@ -100,9 +105,9 @@ float const epsilon = 1e-8;
         [_frontView.scene addChild:frontGridNode];
         
         // upper right
-        _sideView = [[PerspectiveView alloc] initWithCube:_cube andTick:NO];
+        _sideView = [[PerspectiveView alloc] initWithCube:_cube andWorld:_worldObjects andTick:YES];
         _sideView.viewport = CGRectMake(width/2.0, 0.0, width/2.0, height/2.0);
-        _sideController = [[PerspectiveController alloc] initWithView:_sideView cx:30 cy:0 cz:0 name:@"Side" cube:_cube];
+        _sideController = [[PerspectiveController alloc] initWithView:_sideView cx:30 cy:0 cz:0 name:@"Side" cube:_cube world:_worldObjects];
         
         Isgl3dMeshNode * sideGridNode = [[[Isgl3dMeshNode alloc] init] createNodeWithMesh:grid andMaterial:gridMaterial];
         sideGridNode.rotationX = -90;
@@ -112,9 +117,9 @@ float const epsilon = 1e-8;
         [_sideView.scene addChild:sideGridNode];
         
         // upper left
-        _topView = [[PerspectiveView alloc] initWithCube:_cube andTick:NO];
+        _topView = [[PerspectiveView alloc] initWithCube:_cube andWorld:_worldObjects andTick:YES];
         _topView.viewport = CGRectMake(width/2.0, height/2.0, width/2.0, height/2.0);
-        _topController = [[PerspectiveController alloc] initWithView:_topView cx:0 cy:30 cz:epsilon name:@"Top" cube:_cube];
+        _topController = [[PerspectiveController alloc] initWithView:_topView cx:0 cy:30 cz:epsilon name:@"Top" cube:_cube world:_worldObjects];
         
         [_topView.scene addChild:gridNode];
         
@@ -135,6 +140,24 @@ float const epsilon = 1e-8;
 		return self;
 	}
 	return self;
+}
+
+- (void) createWorld {
+    // hard code in some objects
+    
+    Isgl3dColorMaterial * worldMaterial = [Isgl3dColorMaterial materialWithHexColors:@"701820" diffuse:@"701820" specular:@"701820" shininess:0];
+    Isgl3dUVMap * uvMapCube = [Isgl3dUVMap uvMapWithUA:0.0 vA:0.0 uB:0.0 vB:0.0 uC:1.0 vC:1.0];
+    
+    NSArray * worldMaterialArray = [[NSArray alloc] initWithObjects:worldMaterial, worldMaterial, worldMaterial, worldMaterial, worldMaterial, worldMaterial, nil];
+    NSArray * uvMapCubeArray = [[NSArray alloc] initWithObjects:uvMapCube, uvMapCube, uvMapCube, uvMapCube, uvMapCube, uvMapCube,  nil];
+    
+    Isgl3dMultiMaterialCube *object1 = [Isgl3dMultiMaterialCube cubeWithDimensionsAndMaterials:worldMaterialArray uvMapArray:uvMapCubeArray width:1 height:1 depth:1 nSegmentWidth:1 nSegmentHeight:1 nSegmentDepth:1];
+    object1.scaleX = 1;
+    object1.scaleY = 5;
+    object1.scaleZ = 10;
+    object1.position = iv3(7, 0, -3);
+    
+    _worldObjects = [[NSMutableArray alloc] initWithObjects:object1, nil];
 }
 
 - (void) toggleRotate:(BOOL)on {
@@ -259,7 +282,9 @@ float const epsilon = 1e-8;
 	if (_sideController) {
 		[_sideController release];
 	}
-    
+    if (_worldObjects) {
+        [_worldObjects release];
+    }
 	[[Isgl3dTouchScreen sharedInstance] removeResponder:_perspectiveController];
 	[[Isgl3dTouchScreen sharedInstance] removeResponder:_frontController];
 	[[Isgl3dTouchScreen sharedInstance] removeResponder:_sideController];

@@ -15,7 +15,7 @@
 
 @implementation PerspectiveController
 
-- (id) initWithView:(Isgl3dView *)view cx:(float)cx cy:(float)cy cz:(float)cz name:(NSString *)name cube:(Isgl3dMultiMaterialCube *)cube{
+- (id) initWithView:(Isgl3dView *)view cx:(float)cx cy:(float)cy cz:(float)cz name:(NSString *)name cube:(Isgl3dMultiMaterialCube *)cube world:(NSMutableArray *)worldObjects{
 	
     if ((self = [super init])) {
         _view = [view retain];
@@ -25,6 +25,7 @@
         _camera = [view.camera retain];
         _name = [name retain];
         _cube = [cube retain];
+        
         [_camera setPosition:iv3(cx, cy, cz)];
         
         _canMove = YES;
@@ -47,6 +48,7 @@
         }
         _currentlyTouched = NO;
         
+        [self setWorldPoints];
         [[Isgl3dDirector sharedInstance] addView:_view];
         
         
@@ -63,6 +65,7 @@
 	[_view release];
 	[_name release];
     [_cube release];
+    
 	if (_target) {
 		[_target release];
 	}
@@ -83,6 +86,45 @@
 	
 }
 
+- (void) setWorldPoints {
+    NSMutableArray *worldObjects = ((PerspectiveView *)_view).worldObjects;
+    worldPoints = malloc(sizeof(Isgl3dVector3) * worldObjects.count * 8);
+    
+    int cubeIndex = 0;
+    for(Isgl3dMultiMaterialCube *worldCube in worldObjects) {
+        Isgl3dVector3 p[] = {
+          iv3(worldCube.x - worldCube.scaleX / 2,
+              worldCube.y - worldCube.scaleY / 2,
+              worldCube.z - worldCube.scaleZ / 2),
+          iv3(worldCube.x + worldCube.scaleX / 2,
+              worldCube.y - worldCube.scaleY / 2,
+              worldCube.z - worldCube.scaleZ / 2),
+          iv3(worldCube.x - worldCube.scaleX / 2,
+              worldCube.y + worldCube.scaleY / 2,
+              worldCube.z - worldCube.scaleZ / 2),
+          iv3(worldCube.x - worldCube.scaleX / 2,
+              worldCube.y - worldCube.scaleY / 2,
+              worldCube.z + worldCube.scaleZ / 2),
+          iv3(worldCube.x + worldCube.scaleX / 2,
+              worldCube.y + worldCube.scaleY / 2,
+              worldCube.z - worldCube.scaleZ / 2),
+          iv3(worldCube.x + worldCube.scaleX / 2,
+              worldCube.y - worldCube.scaleY / 2,
+              worldCube.z + worldCube.scaleZ / 2),
+          iv3(worldCube.x - worldCube.scaleX / 2,
+              worldCube.y + worldCube.scaleY / 2,
+              worldCube.z + worldCube.scaleZ / 2),
+          iv3(worldCube.x + worldCube.scaleX / 2,
+              worldCube.y + worldCube.scaleY / 2,
+              worldCube.z + worldCube.scaleZ / 2)
+        };
+        for(int i = 0; i < 8; i++) {
+           // NSLog(@"%f %f %f", p[i].x, p[i].y, p[i].z);
+            worldPoints[cubeIndex * 8 + i] = p[i];
+        }
+        cubeIndex++;
+    }
+}
 
 - (void) touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event {
     UITouch *touch = [touches anyObject];
@@ -209,7 +251,7 @@
 
 - (void) moveCubeWithLoc1:(CGPoint)loc1 loc2:(CGPoint)loc2 {
     Isgl3dVector3 pos = _cube.position;
-    float panFactor = 0.03;
+    float panFactor = 0.018;
     
     if(_xMovable && _yMovable) { // front view
         pos.x += (loc2.x - loc1.x) * panFactor;
@@ -223,7 +265,9 @@
         pos.y += (loc2.y - loc1.y) * panFactor;
         pos.z += -(loc2.x - loc1.x) * panFactor;
     }
-    _cube.position = pos;
+    if([self isValidPosition:pos]) {
+        _cube.position = pos;
+    }
 }
 
 - (void) scaleCubeWithInitialLoc1:(CGPoint)initLoc1 initialLoc2:(CGPoint)initLoc2
@@ -284,9 +328,70 @@ finalLoc1:(CGPoint)finalLoc1 finalLoc2:(CGPoint)finalLoc2 {
     _canScale = scale;
 }
 
-/**
- * Calculate the distance between two CGPoints
- */
+- (BOOL) isValidPosition:(Isgl3dVector3)pos {
+    Isgl3dVector3 cubePoints[] = {
+        iv3(pos.x - _cube.scaleX / 2,
+            pos.y - _cube.scaleY / 2,
+            pos.z - _cube.scaleZ / 2),
+        iv3(pos.x + _cube.scaleX / 2,
+            pos.y - _cube.scaleY / 2,
+            pos.z - _cube.scaleZ / 2),
+        iv3(pos.x - _cube.scaleX / 2,
+            pos.y + _cube.scaleY / 2,
+            pos.z - _cube.scaleZ / 2),
+        iv3(pos.x - _cube.scaleX / 2,
+            pos.y - _cube.scaleY / 2,
+            pos.z + _cube.scaleZ / 2),
+        iv3(pos.x + _cube.scaleX / 2,
+            pos.y + _cube.scaleY / 2,
+            pos.z - _cube.scaleZ / 2),
+        iv3(pos.x + _cube.scaleX / 2,
+            pos.y - _cube.scaleY / 2,
+            pos.z + _cube.scaleZ / 2),
+        iv3(pos.x - _cube.scaleX / 2,
+            pos.y + _cube.scaleY / 2,
+            pos.z + _cube.scaleZ / 2),
+        iv3(pos.x + _cube.scaleX / 2,
+            pos.y + _cube.scaleY / 2,
+            pos.z + _cube.scaleZ / 2)
+    };
+    
+    int worldCubeCount = ((PerspectiveView *)_view).worldObjects.count;
+    
+    // see if any of the world points are inside of the cube
+    for(int i = 0; i < worldCubeCount * 8; i++) {
+        // cubePoints[0] is the min, cubePoints[7] is the max
+        if([self rectangeleWithLowerLeft:cubePoints[0] andUpperRight:cubePoints[7] containsPoint:worldPoints[i]]) {
+            NSLog(@"INTERSECTION!");
+            return NO;
+        }
+    }
+    
+    // see if the cube is inside the world cubes
+    for(int i = 0; i < worldCubeCount; i++) {
+        for(int j = 0; j < 8; j++) {
+            if([self rectangeleWithLowerLeft:worldPoints[i*8] andUpperRight:worldPoints[i*8+7] containsPoint:cubePoints[j]]) {
+                return NO;
+            }
+        }
+    }
+    return YES;
+}
+
+- (BOOL) rectangeleWithLowerLeft:(Isgl3dVector3)p1 andUpperRight:(Isgl3dVector3)p2 containsPoint:(Isgl3dVector3)p {
+    const float THRESHOLD = -0.5;
+    
+    if(p.x - p1.x > THRESHOLD && p2.x - p.x > THRESHOLD &&
+       p.y - p1.y > THRESHOLD && p2.y - p.y > THRESHOLD &&
+       p.z - p1.z > THRESHOLD && p2.z - p.z > THRESHOLD) {
+        return YES;
+    }
+    return NO;
+}
+
+- (void)print:(Isgl3dVector3)p {
+    NSLog(@"%f %f %f", p.x, p.y, p.z);
+}
 - (float) distanceBetweenPoint1:(CGPoint)point1 andPoint2:(CGPoint)point2 {
 	float dx = point1.x - point2.x;
 	float dy = point1.y - point2.y;

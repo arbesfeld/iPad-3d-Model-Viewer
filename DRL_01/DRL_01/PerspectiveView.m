@@ -9,9 +9,12 @@
 #import "PerspectiveView.h"
 #import "MasterView.h"
 
-const float INTERSECTION_THRESHOLD = 0.3;
+const float INTERSECTION_THRESHOLD = 0.4;
+const int MAXCUBES = 20;
 
 @implementation PerspectiveView
+
+@synthesize worldObjects = _worldObjects;
 
 - (id) init {
 	
@@ -21,46 +24,58 @@ const float INTERSECTION_THRESHOLD = 0.3;
 }
 
 //init with cube, camera and name
-- (id) initWithCube:(Isgl3dMultiMaterialCube *)cube andTick:(BOOL)tick{
+-(id) initWithCube:(Isgl3dMultiMaterialCube *)cube andWorld:(NSMutableArray *)worldObjects andTick:(BOOL)tick{
     
     if ((self = [super init])) {
         _cube = cube;
+        _worldObjects = worldObjects;
+        cubeCount = 0;
         [self.scene addChild:_cube];
-        // Schedule updates
+        for(Isgl3dMultiMaterialCube *worldObject in worldObjects) {
+            [self.scene addChild:worldObject];
+        }
+        
+        // Create red light (producing white specular light), with rendering, and add to scene
+        _redLight = [Isgl3dLight lightWithHexColor:@"FF0000" diffuseColor:@"FF0000" specularColor:@"FFFFFF" attenuation:0.02];
+        _redLight.renderLight = YES;
+        [self.scene addChild:_redLight];
+        
+        // Create green light (producing white specular light), with rendering, and add to scene
+        _greenLight = [Isgl3dLight lightWithHexColor:@"00FF00" diffuseColor:@"00FF00" specularColor:@"FFFFFF" attenuation:0.02];
+        _greenLight.renderLight = YES;
+        [self.scene addChild:_greenLight];
+        
+        // Create blue light (producing white specular light), with rendering, and add to scene
+        _blueLight = [Isgl3dLight lightWithHexColor:@"0000FF" diffuseColor:@"0000FF" specularColor:@"FFFFFF" attenuation:0.02];
+        _blueLight.renderLight = YES;
+        [self.scene addChild:_blueLight];
+        
+        // Set the scene ambient color
+        [self setSceneAmbient:@"444444"];
+        
         if(tick) {
-//            // Create red light (producing white specular light), with rendering, and add to scene
-//            _redLight = [Isgl3dLight lightWithHexColor:@"FF0000" diffuseColor:@"FF0000" specularColor:@"FFFFFF" attenuation:0.02];
-//            _redLight.renderLight = YES;
-//            [self.scene addChild:_redLight];
-//            
-//            // Create green light (producing white specular light), with rendering, and add to scene
-//            _greenLight = [Isgl3dLight lightWithHexColor:@"00FF00" diffuseColor:@"00FF00" specularColor:@"FFFFFF" attenuation:0.02];
-//            _greenLight.renderLight = YES;
-//            [self.scene addChild:_greenLight];
-//            
-//            // Create blue light (producing white specular light), with rendering, and add to scene
-//            _blueLight = [Isgl3dLight lightWithHexColor:@"0000FF" diffuseColor:@"0000FF" specularColor:@"FFFFFF" attenuation:0.02];
-//            _blueLight.renderLight = YES;
-//            [self.scene addChild:_blueLight];
-//            
-//            // Set the scene ambient color
-//            [self setSceneAmbient:@"444444"];
-            
             _allCubes = [[NSMutableArray alloc] initWithCapacity:500];
             [self addCube:cube];
+            // Schedule updates
             [self schedule:@selector(tick:)];
         }
     }
     return self;
 }
 - (void) addCube:(Isgl3dMultiMaterialCube *)cube {
-    Isgl3dColorMaterial * cubeMaterialGrey = [Isgl3dColorMaterial materialWithHexColors:@"A8A8A8" diffuse:@"A8A8A8" specular:@"A8A8A8" shininess:0];
+    Isgl3dColorMaterial * cubeMaterialGrey = [Isgl3dColorMaterial material];
+    float grey = (200.0 - abs( (cubeCount * 20) % 246 - 123 ) ) / 255.0f;
+    float greyArray[] = {grey, grey, grey};
+    [cubeMaterialGrey setAmbientColor:greyArray];
+    [cubeMaterialGrey setDiffuseColor:greyArray];
+    [cubeMaterialGrey setSpecularColor:greyArray];
+    
     Isgl3dUVMap * uvMapCube = [Isgl3dUVMap uvMapWithUA:0.0 vA:0.0 uB:0.0 vB:0.0 uC:1.0 vC:1.0];
     
     NSArray * cubeMaterialArray = [[NSArray alloc] initWithObjects:cubeMaterialGrey, cubeMaterialGrey, cubeMaterialGrey, cubeMaterialGrey, cubeMaterialGrey, cubeMaterialGrey, nil];
     NSArray * uvMapCubeArray = [[NSArray alloc] initWithObjects:uvMapCube, uvMapCube, uvMapCube, uvMapCube, uvMapCube, uvMapCube,  nil];
     
-    Isgl3dMultiMaterialCube *staticCube = [Isgl3dMultiMaterialCube cubeWithDimensionsAndMaterials:cubeMaterialArray uvMapArray:uvMapCubeArray width:3 height:3 depth:3 nSegmentWidth:1 nSegmentHeight:1 nSegmentDepth:1];
+    Isgl3dMultiMaterialCube *staticCube = [Isgl3dMultiMaterialCube cubeWithDimensionsAndMaterials:cubeMaterialArray uvMapArray:uvMapCubeArray width:1 height:1 depth:1 nSegmentWidth:1 nSegmentHeight:1 nSegmentDepth:1];
     staticCube.x = cube.x;
     staticCube.y = cube.y;
     staticCube.z = cube.z;
@@ -69,7 +84,12 @@ const float INTERSECTION_THRESHOLD = 0.3;
     staticCube.scaleZ = cube.scaleZ;
     staticCube.rotationZ = cube.rotationZ;
     
+    cubeCount++;
     [_allCubes addObject:staticCube];
+    if([_allCubes count] > MAXCUBES) {
+        [self.scene removeChild:[_allCubes objectAtIndex:0]];
+        [_allCubes removeObjectAtIndex:0];
+    }
     [self.scene addChild:[_allCubes lastObject]];
 }
 
@@ -114,7 +134,6 @@ const float INTERSECTION_THRESHOLD = 0.3;
 }
 
 - (void) tick:(float)dt {
-    NSLog(@"tick");
     float intersectionPercentage = [self intersectionPercentageCube1:[_allCubes lastObject] withCube2:_cube];
     if(intersectionPercentage < INTERSECTION_THRESHOLD) {
         

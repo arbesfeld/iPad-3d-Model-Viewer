@@ -16,6 +16,8 @@
     
     Isgl3dMultiMaterialCube * _cube;
     
+    Isgl3dVector3 *worldPoints;
+    
     CGRect _viewRect;
     CGPoint _initCenter;
     
@@ -28,7 +30,7 @@
     BOOL _canRotate, _canMove, _canScale;
 }
 
-- (id) initWithView:(Isgl3dView *)view cx:(float)cx cy:(float)cy cz:(float)cz name:(NSString *)name cube:(Isgl3dMultiMaterialCube *)cube;
+- (id) initWithView:(Isgl3dView *)view cx:(float)cx cy:(float)cy cz:(float)cz name:(NSString *)name cube:(Isgl3dMultiMaterialCube *)cube world:(NSMutableArray *)worldObjects;
 - (void) setRotation:(BOOL)rotate;
 - (void) setMove:(BOOL)move;
 - (void) setScale:(BOOL)scale;
