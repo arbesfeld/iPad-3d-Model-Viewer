@@ -10,9 +10,9 @@
 
 #import "PerspectiveView.h"
 #import "PerspectiveController.h"
+
 float const epsilon = 1e-8;
 @implementation MasterView
-
 
 - (id) init {
     if ((self = [super init])) {
@@ -37,7 +37,6 @@ float const epsilon = 1e-8;
         [_rotateButton setX:height/2-30 andY:width/2 - 45];
 		[_rotateButton addEvent3DListener:self method:@selector(rotateButtonPressed:) forEventType:TOUCH_EVENT];
         [_hud.scene addChild:_rotateButton];
-        
         
         _moveButtonMaterial = [Isgl3dTextureMaterial materialWithTextureFile:@"moveOn.png" shininess:0 precision:Isgl3dTexturePrecisionMedium repeatX:NO repeatY:NO];
         _moveButton = [[Isgl3dGLUIButton alloc] initWithMaterial:_moveButtonMaterial width:70 height:70];
@@ -75,45 +74,46 @@ float const epsilon = 1e-8;
         _cube.scaleY = 3;
         _cube.scaleZ = 3;
         
-        // lower right
-        _perspectiveView = [[PerspectiveView alloc] initWithCube:_cube andWorld:_worldObjects andTick:YES];
-        
         //create perspective grid
         Isgl3dTextureMaterial * gridMaterial = [Isgl3dTextureMaterial materialWithTextureFile:@"grid.png" shininess:0 precision:Isgl3dTexturePrecisionHigh repeatX:YES repeatY:YES];
-
+        
         Isgl3dUVMap * uvMap = [Isgl3dUVMap uvMapWithUA:0.0 vA:0.0 uB:2.0 vB:0.0 uC:0.0 vC:2.0];
         Isgl3dPlane * grid = [Isgl3dPlane meshWithGeometryAndUVMap:20.0 height:20.0 nx:2 ny:2 uvMap:uvMap];
-         
+        
         Isgl3dMeshNode * gridNode = [[[Isgl3dMeshNode alloc] init] createNodeWithMesh:grid andMaterial:gridMaterial];
         gridNode.rotationX = -90;
         gridNode.position = iv3(0, 0, 0);
-        gridNode.alphaCullValue = 0.1;
+        [gridNode enableAlphaCullingWithValue:0.1];
+        // lower right
+        _perspectiveView = [[PerspectiveView alloc] initWithCube:_cube andWorld:_worldObjects andTick:YES];
+        
         [_perspectiveView.scene addChild:gridNode];
         
         _perspectiveView.viewport = CGRectMake(0.0, 0.0, width/2.0, height/2.0);
         _perspectiveController = [[PerspectiveController alloc] initWithView:_perspectiveView cx:30 cy:30 cz:30  name:@"Perspective" cube:_cube world:_worldObjects];
         
         // lower left
-        _frontView = [[PerspectiveView alloc] initWithCube:_cube andWorld:_worldObjects andTick:YES];
+        _frontView = [[PerspectiveView alloc] initWithCube:_cube andWorld:_worldObjects andTick:NO];
         _frontView.viewport = CGRectMake(0.0, height/2.0, width/2.0, height/2.0);
         _frontController = [[PerspectiveController alloc] initWithView:_frontView cx:0 cy:0 cz:30 name:@"Front" cube:_cube world:_worldObjects];
         
-        Isgl3dMeshNode * frontGridNode = [[[Isgl3dMeshNode alloc] init] createNodeWithMesh:grid andMaterial:gridMaterial];
-        
+        Isgl3dCube *frontGridMesh = [[Isgl3dCube alloc] initWithGeometry:10 height:0.2 depth:10 nx:1 ny:1];
+        Isgl3dMeshNode * frontGridNode = [[[Isgl3dMeshNode alloc] init] createNodeWithMesh:frontGridMesh andMaterial:gridMaterial];
         frontGridNode.position = iv3(0, 0, 0);
-        frontGridNode.alphaCullValue = 0.1;
+        //frontGridNode.alphaCullValue = 0.1;
         [_frontView.scene addChild:frontGridNode];
         
         // upper right
-        _sideView = [[PerspectiveView alloc] initWithCube:_cube andWorld:_worldObjects andTick:YES];
+        _sideView = [[PerspectiveView alloc] initWithCube:_cube andWorld:_worldObjects andTick:NO];
         _sideView.viewport = CGRectMake(width/2.0, 0.0, width/2.0, height/2.0);
         _sideController = [[PerspectiveController alloc] initWithView:_sideView cx:30 cy:0 cz:0 name:@"Side" cube:_cube world:_worldObjects];
         
-        Isgl3dMeshNode * sideGridNode = [[[Isgl3dMeshNode alloc] init] createNodeWithMesh:grid andMaterial:gridMaterial];
-        sideGridNode.rotationX = -90;
-        sideGridNode.rotationZ = -90;
+        Isgl3dCube *sideGridMesh = [[Isgl3dCube alloc] initWithGeometry:10 height:0.2 depth:10 nx:1 ny:1];
+        Isgl3dMeshNode * sideGridNode = [[[Isgl3dMeshNode alloc] init] createNodeWithMesh:sideGridMesh andMaterial:gridMaterial];
+        //sideGridNode.rotationX = -90;
+        //sideGridNode.rotationZ = -90;
         sideGridNode.position = iv3(0, 0, 0);
-        sideGridNode.alphaCullValue = 0.1;
+        //sideGridNode.alphaCullValue = 0.1;
         [_sideView.scene addChild:sideGridNode];
         
         // upper left
@@ -128,7 +128,6 @@ float const epsilon = 1e-8;
         [[Isgl3dTouchScreen sharedInstance] addResponder:_frontController];
         [[Isgl3dTouchScreen sharedInstance] addResponder:_sideController];
         [[Isgl3dTouchScreen sharedInstance] addResponder:_topController];
-        
         
         [[Isgl3dDirector sharedInstance] addView:_staticHud];
         
@@ -156,7 +155,10 @@ float const epsilon = 1e-8;
     object1.scaleY = 5;
     object1.scaleZ = 10;
     object1.position = iv3(7, 0, -3);
-    
+    object1.alpha = 0.3;
+    [object1 setAlpha:200];
+    [object1 setAlphaCullValue:0.1];
+   // [object1 ]
     _worldObjects = [[NSMutableArray alloc] initWithObjects:object1, nil];
 }
 

@@ -9,8 +9,9 @@
 #import "PerspectiveView.h"
 #import "MasterView.h"
 
-const float INTERSECTION_THRESHOLD = 0.4;
-const int MAXCUBES = 20;
+const float INTERSECTION_THRESHOLD = 0.7;
+const int MAXCUBES = 5;
+const float eps = 0.01;
 
 @implementation PerspectiveView
 
@@ -25,8 +26,8 @@ const int MAXCUBES = 20;
 
 //init with cube, camera and name
 -(id) initWithCube:(Isgl3dMultiMaterialCube *)cube andWorld:(NSMutableArray *)worldObjects andTick:(BOOL)tick{
-    
     if ((self = [super init])) {
+       // self.zSortingEnabled = YES;
         _cube = cube;
         _worldObjects = worldObjects;
         cubeCount = 0;
@@ -79,9 +80,9 @@ const int MAXCUBES = 20;
     staticCube.x = cube.x;
     staticCube.y = cube.y;
     staticCube.z = cube.z;
-    staticCube.scaleX = cube.scaleX;
-    staticCube.scaleY = cube.scaleY;
-    staticCube.scaleZ = cube.scaleZ;
+    staticCube.scaleX = cube.scaleX * (1-eps);
+    staticCube.scaleY = cube.scaleY * (1-eps);
+    staticCube.scaleZ = cube.scaleZ * (1-eps);
     staticCube.rotationX = cube.rotationX;
     staticCube.rotationY = cube.rotationY;
     staticCube.rotationZ = cube.rotationZ;

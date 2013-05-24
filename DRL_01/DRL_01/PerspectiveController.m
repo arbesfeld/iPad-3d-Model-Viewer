@@ -51,8 +51,6 @@
         [self setWorldPoints];
         [[Isgl3dDirector sharedInstance] addView:_view];
         
-        
-        
 		// Initialise the controller
 		[self reset];
     }
